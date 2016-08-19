@@ -7,6 +7,39 @@ library(grid)
 #library(BSgenome.Hsapiens.UCSC.hg19)
 
 
+
+#' Replace EZ ID
+#' @description takes a table returned by david and swaps the EZ IDs
+#' with official gene symbols
+#' @param table David GO table
+#' @param pvalue minimum cut off for keeping GO terms
+#' @returns a table of GO terms with IDs replaced with names
+#' @examples
+#' genesEZ<-list(list("GATA","TAL1","RUNX1"))
+#' contexts<-c("test")
+#' user<-testuser@example.com
+#' davidResults<-genGO(user,contexts,genesEZ)
+#' ## Replace the ids with names and only keep the 
+#' ## GO terms that have a p-value less than 1e-3
+#' replaceEZID(davidResults[[1]][[1]],pvalue=1e-3)
+#' @export
+replaceEZID<-function(table,pvalue=1e-1){
+	## Takes a string of EZ ids and splits it. Then the ids are 
+	## swapped with gene names and returns a string of gene names
+	ezidGene<-function(ezid){
+		ezidSplit<-strsplit(ezid,", ")[[1]]
+		geneName<-select(org.Hs.eg.db,ezidSplit, 
+			"SYMBOL" ,"ENTREZID")[,2]
+		paste(geneName,collapse=", ")
+	}
+
+    sigReg<-table[,5]<pvalue
+    geneNames<-sapply(table[sigReg,6],ezidGene)
+    stable<-table[sigReg,]
+    stable[,6]<-geneNames
+    stable
+}
+
 genGeneTSS<-function(exons=NULL){
     if(!(require(org.Hs.eg.db) & require(TxDb.Hsapiens.UCSC.hg19.knownGene)))
         NULL

@@ -1,3 +1,20 @@
+excellSheet<-function(matrix, GO){
+    ework<-createWorkbook()
+    s<-createSheet(ework,"Genes")
+    for(i in seq(dim(matrix)[2])){
+        addDataFrame(selectGenes(matrix,colnames(matrix)[i]),col.names=TRUE,row.names=FALSE,sheet=s,startColumn = i)
+    }
+    for(i in colnames(matrix)){
+        if(i %in% contexts){
+        s<-createSheet(ework,paste0("BP-",i))
+        r<-addDataFrame(GO[[i]][[1]],col.names=TRUE,row.names=FALSE,sheet=s)
+        print(paste0("MF-",i))
+        d<-createSheet(ework,paste0("MF-",i))
+        r<-addDataFrame(GO[[i]][[2]],col.names=TRUE,row.names=FALSE,sheet=d)
+    }
+    }
+    ework    
+}
 
 makePeakFiles<-function(categories,mock="combined")paste("~/Dropbox/Data/august_peaks/",categories,"~",mock,"_mock_peaks.xls",sep="")
 

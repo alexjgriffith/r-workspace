@@ -6,6 +6,93 @@ library(parallel)
 library(grid)
 #library(BSgenome.Hsapiens.UCSC.hg19)
 
+
+genGeneTSS<-function(exons=NULL){
+    if(!(require(org.Hs.eg.db) & require(TxDb.Hsapiens.UCSC.hg19.knownGene)))
+        NULL
+    if(is.null(exons))
+    exons<-exonsBy(TxDb.Hsapiens.UCSC.hg19.knownGene, by='gene')
+    t<-c(0,exons@partitioning@end)
+    regs<-cbind(t[1:(length(t)-1)]+1,t[2:length(t)])
+    df<-data.frame(chr=as.character(exons@unlistData@seqnames[regs[,1]]),
+                   tss=0,
+                   strands=c("+","-")[as.numeric(exons@unlistData@strand[regs[,1]])],
+                   id=exons@partitioning@NAMES,
+                       name=select(org.Hs.eg.db,exons@partitioning@NAMES, "SYMBOL","ENTREZID")$SYMBOL)
+ 
+    hold<-rep(0,dim(regs)[[1]])
+    hold[df$strands=="-"]<-regs[df$strands=="-",2]
+    df$tss[df$strands=="-"]=exons@unlistData@ranges@start[hold[df$strands=="-"]]+exons@unlistData@ranges@width[hold[df$strands=="-"]]
+    hold[df$strands=="+"]<-regs[df$strands=="+",1]
+    df$tss[df$strands=="+"]=exons@unlistData@ranges@start[hold[df$strands=="+"]]
+    df[!is.na(as.character(df$name)),]
+}
+
+
+selectGenes<-function(matrix,context,df=NULL){
+    if(is.null(df)){
+        df<-data.frame(rownames(matrix)[matrix[,context]==1])
+        colnames(df)<-context
+        return(df)
+    }
+    else
+        return(rownames(matrix)[matrix[,context]==1])
+}
+
+## significantly faster than genomicRegions in CCCA
+## also i think it is a bit clearer than the previous version
+genomicRegions<-function(chr,tss,strand,proxUp,proxDown,distal){
+    swapif<-function(x){
+        if((x[1]<=x[2]))
+            x
+        else
+            cbind(x[2],x[1])
+    }
+    levels(strand)<-c(-1,1)
+    strand<-as.numeric(strand)
+    basalDomains<-t(apply(
+    cbind(tss-strand*proxUp,tss+strand*proxDown),1,swapif))
+    bound<-na.omit(do.call(rbind,lapply(levels(chr),function(lev){
+        y<-basalDomains[chr==lev,]
+        if(sum(chr==lev)==1){
+            return (cbind(max(0,y[1]-distal),(y[2]+distal)))
+        }
+        else if(sum(chr==lev)<1){
+            return (cbind(NA,NA))
+        }
+        else {
+            y<-y[order(y[,1]),]
+            len<-dim(y)[1]
+            lower<-c(0,y[1:(len-1),2])
+            upper<-c(y[2:len,1],y[len,1]+distal)
+            extBD<-cbind(y,lower,upper,y[,1]-distal,y[,2]+distal)
+            lbl<-rowSums(cbind(extBD[,1]>extBD[,3],
+                               extBD[,1] > extBD[,3]& extBD[,3] < extBD[,5],
+                               extBD[,1] > extBD[,3]& extBD[,3] < extBD[,5]&extBD[,5]<0))
+            lb<-rep(0,len)
+            lb[lbl==0]=extBD[lbl==0,1]
+            lb[lbl==1]=extBD[lbl==1,3]
+            lb[lbl==2]=extBD[lbl==2,5]
+            lb[lbl==3]=0
+            ubl<-rowSums(cbind(extBD[,2]<extBD[,4],
+                               extBD[,2]<extBD[,4]&extBD[,4]>extBD[,6]))
+            ub<-rep(0,len)
+            ub[ubl==0]=extBD[ubl==0,2]
+            ub[ubl==1]=extBD[ubl==1,4]
+            ub[ubl==2]=extBD[ubl==2,6]
+            return(cbind(lb,ub))
+            ##return(cbind(NA,NA))
+        }
+})))
+    bc<-na.omit(do.call(c,sapply(levels(chr),function(lev){
+        if(sum(chr==lev)<1)
+            NA
+        else
+            as.character(chr[chr==lev])
+    })))
+    geneRangeToRegion(bound,bc)
+}
+
 readPeaksXLS <- function(file, name = file,pValue=20) {
     bedData <- read.table(file, header = TRUE, skip = "#")
     bedData <- bedData[bedData$X.log10.pvalue > pValue, ]
@@ -70,7 +157,24 @@ makeGeneList<-function(geneFile,rna=NULL){
     geneListP[genesInList,]
 }
 
-geneMatrix<-function(over,reg,regions,geneList,id="name2"){
+geneMatrix<-function(over,reg,geneRegions,geneList,id="name"){
+    contexts<-colnames(reg)
+    a<-lapply(contexts,function(x) greatGeneAssoc(env$over[reg[,x],c(1,2,3)],regions,geneList))
+    names(a)<-contexts
+    b<-sort(unique(unlist(lapply(a,function(x) x[,id]))))
+
+    om<-matrix(FALSE,length(b),length(a))
+    colnames(om)<-contexts
+    rownames(om)<-b
+
+    for(i in contexts){
+        om[as.character(a[[i]][,id]),i]=TRUE
+    }
+    om
+}
+
+
+geneMatrix_old<-function(over,reg,regions,geneList,id="name2"){
     geneCount<-function(y,allGenes){
         d<-setdiff(allGenes,y)
         t<-rbind(data.frame(names=y,count=rep(1,length(y))),data.frame(names=d,count=rep(0,length(d))))

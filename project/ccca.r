@@ -5,7 +5,37 @@ library(ggplot2)
 library(parallel)
 library(grid)
 #library(BSgenome.Hsapiens.UCSC.hg19)
+symbolToENTREZID<-function(list)
+    Filter(function(x)!is.na(x) ,select(org.Hs.eg.db, as.character(unlist(list)), "ENTREZID", "SYMBOL")[,2])
 
+
+
+genGO<-function(user,contexts,ez){
+    david<-DAVIDWebService$new(url="https://david.ncifcrf.gov/webservice/services/DAVIDWebService.DAVIDWebServiceHttpSoap12Endpoint/")
+    getHttpProtocolVersion(david)
+    setEmail(david,user)
+    show(david)
+    connect(david)
+    setTimeOut(david, 100000);
+    RDAVIDWebService::getGeneListNames(david)
+    getBPMF<-function(context,david){
+        print(context)
+        result <- addList(david, ez[[context]], 
+                          idType = "ENTREZ_GENE_ID", listName = context, 
+                          listType = "Gene")
+        
+        setCurrentSpecies(david, 1)
+        RDAVIDWebService::getSpecieNames(david)
+        setAnnotationCategories(david, "GOTERM_BP_FAT")
+        res1 <- getFunctionalAnnotationChart(david, threshold = 1, count = 2)
+        setAnnotationCategories(david, "GOTERM_MF_FAT")
+        res2 <- getFunctionalAnnotationChart(david, threshold = 1, count = 2)
+        list(res1,res2)
+    }
+    #cs<-makeForkCluster(4)
+    addNames(lapply(contexts, getBPMF,david),contexts,list=TRUE)
+    #stopCluster(cs)
+}
 
 
 #' Replace EZ ID
@@ -192,7 +222,7 @@ makeGeneList<-function(geneFile,rna=NULL){
 
 geneMatrix<-function(over,reg,geneRegions,geneList,id="name"){
     contexts<-colnames(reg)
-    a<-lapply(contexts,function(x) greatGeneAssoc(env$over[reg[,x],c(1,2,3)],regions,geneList))
+    a<-lapply(contexts,function(x) greatGeneAssoc(over[reg[,x],c(1,2,3)],regions,geneList))
     names(a)<-contexts
     b<-sort(unique(unlist(lapply(a,function(x) x[,id]))))
 

@@ -39,6 +39,8 @@ AFS<-makeAFS(peakfiles,cats,pValue=20)
 ```
 ___
 ### Making the UDM (Unified Density Matrix)
+The UDM is a matrix of peak pile up counts. The core is implemented in c and can be run in parallel to speed up analysis. Possible future improvements include reading from BAM files rather than BED files, and using memory map rather tha fread.
+
 ```R
 ## locations of raw reads that have been mapped to the genome
 rawDatafiles<-paste0("sampleReads/",cats,".bed")
@@ -87,6 +89,9 @@ Coming soon ....
 ___
 ### Gene Association
 For gene assosiation I implemented the default [GREAT](http://bejerano.stanford.edu/great/public/html/) algorithm in R. I use the `org.Hs.eg.db` library to gernete the entrez ids (EZ IDs) from the official gene symbols. This example uses `hg19.RefSeqGenes.csv` for its gene list. You will have to adapt the process based on the gene list you want to use.
+
+* Note that `geneRegion` is currently reliable but highly unoptimized. I am currently updating a version with improved speed.
+* `geneRegion` only has to be called once for any geneList provided, I recomend saving the resulting list using R's build in `save` function and loading in the results when needed.
 
 ```R
 library(org.Hs.eg.db) # used to transform GENE NAMES to EZ IDS

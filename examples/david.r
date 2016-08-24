@@ -120,10 +120,10 @@ saveWorkbook(ework,path.expand("~/Dropbox/UTX-Alex/Paper/fixed-TabS12(PCA).xlsx"
 
 lapply(davidResults[["Erythroid"]][[1]][1:10,6],ezidGene)
     
-genGO<-function(contexts,ez){
+genGO<-function(user,contexts,ez){
     david<-DAVIDWebService$new(url="https://david.ncifcrf.gov/webservice/services/DAVIDWebService.DAVIDWebServiceHttpSoap12Endpoint/")
     getHttpProtocolVersion(david)
-    setEmail(david,"agriffith@ohri.ca")
+    setEmail(david,user)
     show(david)
     connect(david)
     setTimeOut(david, 100000);

@@ -52,18 +52,18 @@ getPRC<-function(pvalue=5,control="single",treatment="treatment",forward="22"){
 getPRC20<-function(n=1,inner=0.25){
     out<-getPRC(20,"combined")
     add<-with(out,{
-    ECFC<-normalize(prc$eigenVectors[,4])<(-(n))&normalize(prc$eigenVectors[,2])<(-(n))
-    ECFCA<-normalize(prc$eigenVectors[,2])<(-n)
-    ECFCB<-normalize(prc$eigenVectors[,4])<(-n)
-    HSC<-normalize(prc$eigenVectors[,4])>(n)
-    Leukemia<-normalize(prc$eigenVectors[,1])<(-n)
-    Erythroid<-normalize(prc$eigenVectors[,1])>(n)
+    ECFC<-CCCA:::normalize(prc$eigenVectors[,4])<(-(n))&CCCA:::normalize(prc$eigenVectors[,2])<(-(n))
+    ECFCA<-CCCA:::normalize(prc$eigenVectors[,2])<(-n)
+    ECFCB<-CCCA:::normalize(prc$eigenVectors[,4])<(-n)
+    HSC<-CCCA:::normalize(prc$eigenVectors[,4])>(n)
+    Leukemia<-CCCA:::normalize(prc$eigenVectors[,1])<(-n)
+    Erythroid<-CCCA:::normalize(prc$eigenVectors[,1])>(n)
     ALL<-rep(TRUE,length(Erythroid))
-    NONE<-normalize(prc$eigenVectors[,4])>(-inner)&
-        normalize(prc$eigenVectors[,4])<(inner) &
-            normalize(prc$eigenVectors[,1])>(-inner) &
-                normalize(prc$eigenVectors[,1])<(inner) &
-                    normalize(prc$eigenVectors[,2])>(-inner)     
+    NONE<-CCCA:::normalize(prc$eigenVectors[,4])>(-inner)&
+        CCCA:::normalize(prc$eigenVectors[,4])<(inner) &
+            CCCA:::normalize(prc$eigenVectors[,1])>(-inner) &
+                CCCA:::normalize(prc$eigenVectors[,1])<(inner) &
+                    CCCA:::normalize(prc$eigenVectors[,2])>(-inner)     
     ECFC.alt<-ECFC & !(Erythroid | Leukemia | HSC)
     HSC.alt<-HSC & !(Erythroid | Leukemia | ECFC)
     Leukemia.alt<-Leukemia & !(HSC | Erythroid | ECFC)

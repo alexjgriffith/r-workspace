@@ -52,7 +52,7 @@ getPRC<-function(pvalue=5,control="single",treatment="treatment",forward="22"){
 getPRC20<-function(n=1,inner=0.25){
     out<-getPRC(20,"combined")
     add<-with(out,{
-    ECFC<-CCCA:::normalize(prc$eigenVectors[,4])<(-(n))&CCCA:::normalize(prc$eigenVectors[,2])<(-(n))
+    ECFC<-CCCA:::normalize(prc$eigenVectors[,4])<(-(sqrt(n)))&CCCA:::normalize(prc$eigenVectors[,2])<(-(sqrt(n)))
     ECFCA<-CCCA:::normalize(prc$eigenVectors[,2])<(-n)
     ECFCB<-CCCA:::normalize(prc$eigenVectors[,4])<(-n)
     HSC<-CCCA:::normalize(prc$eigenVectors[,4])>(n)

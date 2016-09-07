@@ -302,3 +302,15 @@ plot(getHeights(a[,2]))
 ### Ebox prefferences
 #### moved to examples/eboxPref.r
 
+
+
+hg19<-read.table(system.file("exdata","hg19.RefSeqGenes.csv",package="CCCA"),header=T,comment="")
+
+strsplit(hg19$exonStarts[1:10],", ")
+
+regs<-cbind(as.numeric(unlist(strsplit(as.character(unlist(hg19$exonStarts[1:1000])),split=","))),as.numeric(unlist(strsplit(as.character(unlist(hg19$exonEnds[1:1000])),split=","))))
+
+
+writeXStringSet(Biostrings::getSeq(BSgenome.Hsapiens.UCSC.hg19,rep("chr1",length(regs[,1])),start=regs[,1],end=regs[,2]),"~/Dropbox/test.csv")
+
+hg19$exonEnds[1:10]

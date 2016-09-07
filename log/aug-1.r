@@ -87,32 +87,37 @@ tfun<-function(set){
         }
     })
 
-subt<-do.call(rbind,sel)
+    subt<-do.call(rbind,sel)
 
-osubt<-subt[order(subt$pvalue,decreasing=TRUE),]
+    osubt<-subt[order(subt$pvalue,decreasing=TRUE),]
 
-mots<-unique(as.character(unlist(subt$tmotif)))
+    mots<-unique(as.character(unlist(subt$tmotif)))
 
-findPWM<-function(dataset,motif,pwms){
-a<-do.call(rbind,lapply(which(dataset==names),function(x) pwms[[x]]))
-f<-paste0(">",motif)
-print(f)
-a[a[,1]==f,3][[1]]
-}
+    findPWM<-function(dataset,motif,pwms){
+        a<-do.call(rbind,lapply(which(dataset==names),function(x) pwms[[x]]))
+        f<-paste0(">",motif)
+        print(f)
+        a[a[,1]==f,3][[1]]
+    }
 
-flatenPWM<-function(pwm)paste0("[",paste(c("A","C","G","T"),apply(a[a[,1]==f,3][[1]],1,function(x) paste(pwm,collapse=",")),collapse=";",sep=","),"]")
-print(set)
-out<-cbind(osubt,as.character(unlist(sapply(as.character(osubt$tmotif),function(x) flatenPWM(findPWM(set,x,pwms))))))
-
-do.call(rbind,lapply( seq(dim(out)[1]/3),function(i){
-    print(i)
-    p=((i-1)*3)+1
-    data.frame(motif=out[p,1],motifs=out[p,5],pvalue=out[p,4],
-               annot1=out[p,2],evalue1=out[p,3],
-               annot2=out[p+1,2],evalue2=out[p+1,3],
-               annot3=out[p+2,2],evalue3=out[p+2,3],
-               pwm=out[p,6])
-}))
+    flatenPWM<-function(pwm)
+        paste0("[",paste(c("A","C","G","T"),
+                         apply(a[a[,1]==f,3][[1]],1,
+                               function(x)
+                                   paste(pwm,collapse=",")),collapse=";",sep=","),"]")
+    print(set)
+    print(str(as.character(osubt$tmotif)))
+    out<-cbind(osubt,as.character(unlist(sapply(as.character(osubt$tmotif),function(x) flatenPWM(findPWM(set,x,pwms))))))
+    
+    do.call(rbind,lapply( seq(dim(out)[1]/3),function(i){
+        print(i)
+        p=((i-1)*3)+1
+        data.frame(motif=out[p,1],motifs=out[p,5],pvalue=out[p,4],
+                   annot1=out[p,2],evalue1=out[p,3],
+                   annot2=out[p+1,2],evalue2=out[p+1,3],
+                   annot3=out[p+2,2],evalue3=out[p+2,3],
+                   pwm=out[p,6])
+    }))
 }
 
 res<-lapply(as.character(unique(names)),tfun)
